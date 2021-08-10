@@ -10,8 +10,30 @@ import { defineComponent } from 'vue'
 
 export default defineComponent({
     name:"Nav",
-    setup() {
-        
-    },
+    
 })
 </script>
+
+<style scoped>
+.quiz_bar {
+  width: 100%;
+  height: 8vh;
+  background-color: rgb(186, 142, 228);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+ 
+}
+.flag_img {
+  width: 3.75rem;
+  height: 2rem;
+  background-color: whitesmoke;
+  margin-left: 1rem;
+}
+
+img {
+  width: 100%;
+  height: 100%;
+}
+</style>

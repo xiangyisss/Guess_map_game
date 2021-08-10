@@ -1,16 +1,18 @@
 <template>
-
-  <HelloWorld  />
+  <h1>Worldmap Quiz Game</h1>
+  <Nav />
+  <WorldMap  />
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import HelloWorld from "./components/HelloWorld.vue";
+import Nav from "./components/Nav.vue";
+import WorldMap from "./components/WorldMap.vue";
 
 export default defineComponent({
   name: "App",
   components: {
-    HelloWorld,
+    WorldMap,Nav
   },
 });
 </script>

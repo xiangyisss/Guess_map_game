@@ -1,4 +1,7 @@
-<!-- <?xml version="1.0" encoding="UTF-8" standalone="no"?> -->
+<template>
+  <div class="map_area">
+      
+    <!-- <?xml version="1.0" encoding="UTF-8" standalone="no"?> -->
 <!-- Created for MapSVG plugin: http://mapsvg.com -->
 <svg
    xmlns:mapsvg="http://mapsvg.com"
@@ -7,8 +10,6 @@
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
    mapsvg:geoViewBox="-169.110266 83.600842 190.486279 -58.508473"
-   width="1009.6727"
-   height="665.96301"
   >
  
   <path
@@ -1036,3 +1037,80 @@
      title="Zimbabwe"
      id="ZW" />
 </svg>
+
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, ref } from "vue";
+
+export default defineComponent({
+  name: "WorldMap",
+  setup() {
+    // let countries = document.getElementsByTagName('path');
+    // let array = Array.from(countries)
+    // let countryList : any[]= []
+
+    // console.log(array)
+
+    // for(let item of countries){
+      
+      // let countryText = item.getAttribute('title.textContent')
+      // let countryText = item.attributes[1].nodeValue
+      // countryList.push(countryText)
+      
+      // console.log(countryText)
+    // }
+    // console.log(countryList)
+    setTimeout(() => {
+      let countries = document.getElementsByTagName('path');
+      let array = Array.from(countries);
+      let countryList : any[]= []
+
+      for(let item of countries){
+        
+      
+      let countryText = item.attributes[1].nodeValue
+      countryList.push(countryText)
+      
+      console.log(countryText)
+     }
+    })
+  }
+});
+</script>
+
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style scoped>
+h1 {
+  margin-bottom: 1rem;
+}
+.map_area {
+  width: 80%;
+  height: 90vh;
+  margin: auto;
+  background-color: #001524;
+}
+
+svg path {
+  fill: #264653;
+  stroke: whitesmoke;
+  stroke-width: 0.25;
+}
+
+svg path:hover {
+  fill: #2a6f97;
+  cursor: pointer;
+  transition: 0.5s;
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* svg {
+   width="1009.6727"
+   height="665.96301"
+} */
+</style>
