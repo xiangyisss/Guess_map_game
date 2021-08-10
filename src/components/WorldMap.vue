@@ -1,6 +1,6 @@
 <template>
   <div class="map_area">
-      
+   <h1>Hello</h1>   
     <!-- <?xml version="1.0" encoding="UTF-8" standalone="no"?> -->
 <!-- Created for MapSVG plugin: http://mapsvg.com -->
 <svg
@@ -1042,48 +1042,52 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, reactive, onMounted } from "vue";
 
 export default defineComponent({
   name: "WorldMap",
   setup() {
-    // let countries = document.getElementsByTagName('path');
-    // let array = Array.from(countries)
-    // let countryList : any[]= []
+    
+   onMounted(() => {
 
-    // console.log(array)
-
-    // for(let item of countries){
-      
-      // let countryText = item.getAttribute('title.textContent')
-      // let countryText = item.attributes[1].nodeValue
-      // countryList.push(countryText)
-      
-      // console.log(countryText)
-    // }
-    // console.log(countryList)
-    setTimeout(() => {
       let countries = document.getElementsByTagName('path');
-      let array = Array.from(countries);
-      let countryList : any[]= []
 
-      for(let item of countries){
-        
+      let countryList : any[]= reactive([])
+       
+      for(let item of countries){   
+         let countryText = {
+         countryName : item.attributes[1].nodeValue,
+         countryCode : item.id
+         }
+         countryList.push(countryText)
+      }
+    
+    
+      const getRandomCountry = (list : any) => {
+         let randoumNumber = Math.floor(Math.random() * list.length)
+         let selectedCountry = list[randoumNumber]
+    
+         //countryList.slice(randoumNumber, 1)
+         
+         return selectedCountry
+      }
+          
+      const country = getRandomCountry(countryList) 
+      //console.log(country)       
       
-      let countryText = item.attributes[1].nodeValue
-      countryList.push(countryText)
       
-      console.log(countryText)
-     }
-    })
-  }
+   })
+
+   return {}
+   },   
+  
 });
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 h1 {
-  margin-bottom: 1rem;
+  color: white;
 }
 .map_area {
   width: 80%;
