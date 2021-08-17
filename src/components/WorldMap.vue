@@ -1,7 +1,7 @@
 <template>
 	
 	<div class="container">
-	<div class="gameover" v-if="gameOver"><h1>Game over</h1></div>
+	<div class="gameover" v-if="gameOver"><h1>Game over</h1> <button @click="restart">Restart</button></div>
 	<div class="info_bar">
 
 	<div class="countryname_flag">
@@ -109,22 +109,34 @@ export default defineComponent({
 			
 			lifes.value -= 1
 			ev.target.fill =am4core.color("#FF0000")
+			
 		}
 		if(lifes.value === 0) {
 			let answer = WorldMap.getPolygonById(randomCountry.value.countryId);
-			answer.isHover = true;
-			mapTemplate.tooltipText = "{randomCountry.value.countryName}";
+			answer.isHover = true
+			
 			gameOver.value = true
+
+			//testing
+			
+			answer.series.chart.zoomToMapObject(answer)
+					
+			
 		}
 		// console.log('You are wrong')
 
 	}
 	
 	mapTemplate.events.on("hit", myFunction);
+
+	
 	
 	//map.series.template.events.off("hit", myFunction, this);
 		
-	
+	const restart = () => {
+		score.value = 0
+		lifes.value = 3
+	}
 	
 	
 	return {
@@ -133,7 +145,8 @@ export default defineComponent({
 		countryNamdAndId,
 		score,
 		lifes,
-		gameOver
+		gameOver,
+		restart
 	}
 }    
 });
