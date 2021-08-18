@@ -46,20 +46,21 @@ export default defineComponent({
 	map.projection = new am4maps.projections.Miller();
 
 	let WorldMap = new am4maps.MapPolygonSeries();
-	WorldMap.useGeodata = true;
 	map.series.push(WorldMap);
 	WorldMap.exclude = ["AQ"];
+	WorldMap.useGeodata = true;
 
-	let mapTemplate = WorldMap.mapPolygons.template;
-	// mapTemplate.tooltipText = "{name}";
+	let worldMapTemplate = WorldMap.mapPolygons.template;
+	// worldMapTemplate.tooltipText = "{name}";
 
 	//testing
-
+	WorldMap.calculateVisualCenter = true;
+	WorldMap.mapPolygons.template.tooltipPosition = "fixed";
 	//testing --end
 	// mapTemplate.fill = am4core.color("#98EA8A");
 
-	let hs = mapTemplate.states.create("hover");
-	hs.properties.fill = am4core.color("#6ED35D");
+	let hoverState = worldMapTemplate.states.create("hover");
+	hoverState.properties.fill = am4core.color("#6ED35D");
 
 	let countryList : Ref<any[]> = ref([])
 	let countryNamdAndId : Ref<any[]> = ref([])
@@ -114,20 +115,18 @@ export default defineComponent({
 		if(lifes.value === 0) {
 			let answer = WorldMap.getPolygonById(randomCountry.value.countryId);
 			answer.isHover = true
-			
 			gameOver.value = true
-
-			//testing
+			answer.series.chart.zoomToMapObject(answer);
 			
-			answer.series.chart.zoomToMapObject(answer)
-					
 			
+			
+			
+			console.log('running')
 		}
-		// console.log('You are wrong')
 
 	}
 	
-	mapTemplate.events.on("hit", myFunction);
+	worldMapTemplate.events.on("hit", myFunction);
 
 	
 	
@@ -136,6 +135,8 @@ export default defineComponent({
 	const restart = () => {
 		score.value = 0
 		lifes.value = 3
+		map.goHome();
+		getRandomCountry()
 	}
 	
 	
