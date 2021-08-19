@@ -1,6 +1,6 @@
 <template>
   <h1>Worldmap Quiz Game</h1>
-  <!-- <Nav /> -->
+  
   <WorldMap  />
 </template>
 

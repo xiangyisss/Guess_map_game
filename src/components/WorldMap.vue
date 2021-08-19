@@ -1,9 +1,9 @@
 <template>
-	
+
 	<div class="container">
 		<div v-if="answer" class="correct_answer">{{answer}}</div>
 		<div class="gameover" v-if="gameOver">
-			<h1>Game over</h1> 
+			<h1>Game over</h1>
 			<button class="restart" @click="restart">Restart</button>
 		</div>
 		<div class="info_bar">
@@ -16,7 +16,9 @@
 				<h4>Lifes : {{lifes}}</h4>
 			</div>
 		</div>
-		<div id="chartdiv" >
+		<div id="chartdiv" @click="trackMouseMovement" >
+			<div v-if="clickedCountryName" id="clicked_country_name">{{clickedCountryName}}</div>
+			
 			<button class="zoomout" @click="zoomOut">Rezoom</button>
 		</div>
 	</div>
@@ -35,6 +37,10 @@ interface country {
 	countryName : string
 }
 
+interface position {
+	top : string,
+	left : string
+}
 
 export default defineComponent({
   name: "WorldMap",
@@ -45,39 +51,44 @@ export default defineComponent({
 	let map = am4core.create("chartdiv", am4maps.MapChart);
 	map.geodata = am4geodata_worldLow;
 	map.geodataSource.url = "/path/to/myCustomMap.json";
-	map.projection = new am4maps.projections.Miller();
+	map.projection = new am4maps.projections.Mercator();
 
 
 	var WorldMap = map.series.push(new am4maps.MapPolygonSeries());
 	WorldMap.exclude = ["AQ","UM-FQ","TV"];
 	WorldMap.useGeodata = true;
 	WorldMap.calculateVisualCenter = true;
-	
+
 	let worldMapTemplate = WorldMap.mapPolygons.template;
 	// worldMapTemplate.tooltipText = "{name}";
-	worldMapTemplate.fill = am4core.color("#98EA8A");
-	
+	worldMapTemplate.fill = am4core.color("#58CB55");
+
 	let colorSet = new am4core.ColorSet()
-	
+
 
 	let hoverState = worldMapTemplate.states.create("hover");
 	hoverState.properties.fill = am4core.color("#FE82B6");
 	worldMapTemplate.tooltipPosition = "fixed";
-	
+
 
 	let countryList : Ref<any[]> = ref([])
 	countryList.value  = WorldMap.data
 	let countryNamdAndId : Ref<any[]> = ref([])
 	let randomCountry : Ref<country>= ref({
-		countryId : '',
-		countryName : ''
+		countryId : " ",
+		countryName : " "
 	})
 	let score : Ref<number> = ref(0)
 	let lifes : Ref<number> = ref(5)
 	let answer : Ref<any> = ref();
-	let gameOver : Ref<boolean> = ref(false)
+	let clickedCountryName : Ref<any> = ref();
+	let gameOver : Ref<boolean> = ref(false);
 	let count : Ref<number> = ref(1)
-	
+	let mousePosition : Ref<position> = ref({
+		top : " ",
+		left : " "
+	})
+
 	const getRandomCountry = () => {
 		let randomNumber = Math.floor(Math.random() * countryNamdAndId.value.length)
 		let country = countryNamdAndId.value[randomNumber]
@@ -93,38 +104,81 @@ export default defineComponent({
 				countryName: item.name,
 				countryId: item.id
 			}
-			
+
 			countryNamdAndId.value.push(countryInfo)
-		}	
+		}
 		getRandomCountry()
 	}, 0)
 
 
 	worldMapTemplate.events.on("hit", makeGuess);
 
+	const trackMouseMovement = (clicked : any) => {
+		mousePosition.value = {
+			left : clicked.clientX,
+			top : clicked.clientY
+		}
+		
+		// console.log(mousePosition.value)
+	}
+
+	const showClickedCountryName = (country : any) => {
+		if(randomCountry.value.countryName != country.target.dataItem.dataContext.name) {
+			setTimeout(() => {
+				clickedCountryName.value = country.target.dataItem.dataContext.name
+				
+				let box : any = document.getElementById("clicked_country_name");
+				
+				box.style.position = "absolute";
+				box.style.left = mousePosition.value.left + "px"
+				box.style.top = mousePosition.value.top + "px"
+				box.style.transform = 	"translate(-50%, -50%)"			
+				box.style.zIndex = "3"
+				console.log('Second running',box)
+			});
+
+			setTimeout(() => {
+
+				clickedCountryName.value = ''
+
+			},1000)
+
+		}
+	}
+
 	const checkIfCorrectAnswer = (country : any) => {
 		if(randomCountry.value.countryName === country.target.dataItem.dataContext.name) {
-			
+
 			country.target.fill = am4core.color("#F3CC3B")
 			getRandomCountry()
 			answer.value = ''
 			zoomOut()
 			return score.value +=1;
-		} 
-		lifes.value -= 1
-		country.target.fill = am4core.color("#FF0000")
+		}
+
+
+		lifes.value -= 1;
+		showClickedCountryName(country)
+
+		country.target.fill = am4core.color("#FF0000");
+
 	}
+
+
 
 	const showCorrectAnswer = (answer : any) => {
 		if(lifes.value === 2) {
 			if(count.value === 1){
-				answer.value = randomCountry.value.countryName
-				let country = ref()
-				country.value = WorldMap.getPolygonById(randomCountry.value.countryId);
-				country.value.series.chart.zoomToMapObject(country.value);
+				setTimeout(() => {
+					
+					answer.value = randomCountry.value.countryName
+					let country = ref()
+					country.value = WorldMap.getPolygonById(randomCountry.value.countryId);
+					country.value.series.chart.zoomToMapObject(country.value);
+				}, 1000);
 			}
 			count.value = 0
-		} 
+		}
 	}
 
 	const restart = () => {
@@ -138,28 +192,30 @@ export default defineComponent({
 	}
 
 	const checkIfGameIsOver = () => {
-		if(lifes.value === 0) {			
-			restart()	
+		if(lifes.value === 0) {
+			restart()
 			return gameOver.value = true
 		}
 	}
-	
+
 	function makeGuess(event : any) {
-		
+
 		checkIfCorrectAnswer(event)
-		
+
+		showClickedCountryName(event)
+
 		showCorrectAnswer(answer)
 
 		checkIfGameIsOver()
-		
-	}
-		
 
-	
+	}
+
+
+
 	const zoomOut = () => {
 		map.goHome();
 	}
-	
+
 	return {
 		answer,
 		randomCountry,
@@ -169,22 +225,31 @@ export default defineComponent({
 		lifes,
 		gameOver,
 		restart,
-		zoomOut
-		
+		zoomOut,
+		clickedCountryName,
+		trackMouseMovement,
+
+
 	}
-}    
+}
 });
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 
+#clicked_country_name {
+	padding: 10px;
+	background-color: rgba(255, 255, 255, 0.082);
+	border-radius: 5px;
+	
+}
 .correct_answer{
 	position:absolute;
 	top: 50%;
 	left: 50%;
-	padding: 20px 40px;
-	background-color: white;
+	padding: 10px;
+	background-color: rgba(255, 255, 255, 0.13);
 	border-radius: 5px;
 	z-index: 100;
 }
@@ -193,10 +258,9 @@ export default defineComponent({
 
 .container{
 	position: relative;
+
 }
-h1 {
-  color: blue;
-}
+
 
 .info_bar, .countryname_flag, .score_life {
 	display: flex;
@@ -216,7 +280,7 @@ span, .score {
 
 #chartdiv {
   width: 100%;
-  height: 500px;
+  height: 100vh;
   position: relative;
 }
 
@@ -232,7 +296,7 @@ span, .score {
 	border-radius: 4px;
 	background-color: #349EFF;
 	font-weight: 600; */
-	
+
 }
 
 .restart, .zoomout {
@@ -279,7 +343,7 @@ svg {
 } */
 
 span {
-	color: brown;
+	color: rgb(109, 16, 16);
 }
 
 </style>
