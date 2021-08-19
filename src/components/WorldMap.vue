@@ -50,7 +50,7 @@ export default defineComponent({
 
 
 	var WorldMap = map.series.push(new am4maps.MapPolygonSeries());
-	WorldMap.exclude = ["AQ"];
+	WorldMap.exclude = ["AQ","UM-FQ","TV"];
 	WorldMap.useGeodata = true;
 	WorldMap.calculateVisualCenter = true;
 	
@@ -58,6 +58,8 @@ export default defineComponent({
 	let worldMapTemplate = WorldMap.mapPolygons.template;
 	// worldMapTemplate.tooltipText = "{name}";
 	worldMapTemplate.fill = am4core.color("#98EA8A");
+	
+	let colorSet = new am4core.ColorSet()
 	
 
 	let hoverState = worldMapTemplate.states.create("hover");
@@ -73,7 +75,7 @@ export default defineComponent({
 		countryName : ''
 	})
 	let score : Ref<number> = ref(0)
-	let lifes : Ref<number> = ref(3)
+	let lifes : Ref<number> = ref(5)
 	let gameOver : Ref<boolean> = ref(false)
 	
 	
@@ -99,80 +101,57 @@ export default defineComponent({
 	}, 0)
 
 
-	worldMapTemplate.events.on("hit", myFunction);
+	worldMapTemplate.events.on("hit", makeGuess);
 
-
-	// let answer :any;
-	
-	// if (answer) {
-	// 	answer.isHover = false;
-	// }
-	// answer = WorldMap.getPolygonById(randomCountry.value.countryId);
-	// answer.isHover = true;
-	
-
-	// worldMapTemplate.events.on("over", function(ev :any) {
-	// if (ev.target != answer) {
-	// 	answer.isHover = false;
-	// }
-	
-	// // This is needed so that "unhovering" previous polygon does not hide tooltip
-	// ev.target.isHover = false;
-	// ev.target.isHover = true;
-	// });
-	
-	function myFunction(event : any) {
-		
-		// console.log(ev.target.dataItem.dataContext.name);
-		if(randomCountry.value.countryName === event.target.dataItem.dataContext.name) {
+	const checkIfCorrectAnswer = (country : any) => {
+		if(randomCountry.value.countryName === country.target.dataItem.dataContext.name) {
 			
-			event.target.fill = am4core.color("#F3CC3B")
+			country.target.fill = am4core.color("#F3CC3B")
 			getRandomCountry()
 			return score.value +=1;
 		} 
-			
-			lifes.value -= 1
-			event.target.fill = am4core.color("#FF0000")
-			
-		
-		if(lifes.value === 0) {
-			// let answer = WorldMap.getPolygonById(randomCountry.value.countryId);
-			// answer.tooltipText = "{name}";
-			// answer.isHover = true
-			// // answer.fill = am4core.color("#706767")
-			// answer.series.chart.zoomToMapObject(answer);
-			// console.log(answer.dataItem.dataContext )
-
-			
-			let answer = WorldMap.getPolygonById(randomCountry.value.countryId);
-			answer.isHover = true;
-			
-			
-			
-			if (answer != answer) {
-				answer.isHover = false;
-			}
-			answer.series.chart.zoomToMapObject(answer);
-			// This is needed so that "unhovering" previous polygon does not hide tooltip
-			answer.isHover = false;
-			answer.isHover = false;
-			
-			return gameOver.value = true
-		
-		}
-		
-
+		lifes.value -= 1
+		country.target.fill = am4core.color("#FF0000")
 	}
-		
+
+	const showCorrectAnswer = (answer : any) => {
+		if(lifes.value === 2) {
+			answer.value = WorldMap.getPolygonById(randomCountry.value.countryId);
+			answer.value.series.chart.zoomToMapObject(answer.value);
+			answer.value.tooltipText = "{name}";
+			answer.value.isHover = true
+		} 
+	}
+
 	const restart = () => {
 		score.value = 0;
-		lifes.value = 3;
+		lifes.value = 5;
 		gameOver.value = false;
 		map.goHome();
 		getRandomCountry()
-		// map.setState("default")
+		// map.setState("default")	
+	}
+
+	const checkIfGameIsOver = () => {
+		if(lifes.value === 0) {			
+			restart()	
+			return gameOver.value = true
+		}
+	}
+	
+	function makeGuess(event : any) {
+		
+		checkIfCorrectAnswer(event)
+		
+		let answer : Ref<any> = ref();
+
+		showCorrectAnswer(answer)
+
+		checkIfGameIsOver()
 		
 	}
+		
+
 	
 	const zoomOut = () => {
 		map.goHome();
