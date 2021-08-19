@@ -1,12 +1,12 @@
 <template>
 	
 	<div class="container">
-	<div class="gameover" v-if="gameOver"><h1>Game over</h1> <button @click="restart">Restart</button></div>
+	<div class="gameover" v-if="gameOver"><h1>Game over</h1> <button class="restart" @click="restart">Restart</button></div>
 	<div class="info_bar">
 
 	<div class="countryname_flag">
 	<h4>Find this country <span>{{randomCountry.countryName}}</span> </h4>
-	<img :src="`https://www.countryflags.io/${randomCountry.countryId}/shiny/32.png`">
+	<img :src="`https://www.countryflags.io/${randomCountry.countryId}/shiny/32.png`" >
 	</div>
 	
 	<div class="score_life">
@@ -15,7 +15,9 @@
 	</div>
 	</div>
 	<!-- <button @click="startGame">Start</button> -->
-	<div id="chartdiv" ></div>
+	<div id="chartdiv" >
+		<button class="zoomout" @click="zoomOut">Rezoom</button>
+	</div>
 	</div>
 	
   
@@ -26,6 +28,7 @@ import { defineComponent, ref, Ref} from "vue";
 import * as am4core from "@amcharts/amcharts4/core";
 import * as am4maps from "@amcharts/amcharts4/maps";
 import am4geodata_worldLow from "@amcharts/amcharts4-geodata/worldLow";
+import { any } from "@amcharts/amcharts4/.internal/core/utils/Array";
 // import { any } from "@amcharts/amcharts4/.internal/core/utils/Array";
 
 interface country {
@@ -45,24 +48,25 @@ export default defineComponent({
 	map.geodataSource.url = "/path/to/myCustomMap.json";
 	map.projection = new am4maps.projections.Miller();
 
-	let WorldMap = new am4maps.MapPolygonSeries();
-	map.series.push(WorldMap);
+
+	var WorldMap = map.series.push(new am4maps.MapPolygonSeries());
 	WorldMap.exclude = ["AQ"];
 	WorldMap.useGeodata = true;
+	WorldMap.calculateVisualCenter = true;
+	
 
 	let worldMapTemplate = WorldMap.mapPolygons.template;
 	// worldMapTemplate.tooltipText = "{name}";
-
-	//testing
-	WorldMap.calculateVisualCenter = true;
-	WorldMap.mapPolygons.template.tooltipPosition = "fixed";
-	//testing --end
-	// mapTemplate.fill = am4core.color("#98EA8A");
+	worldMapTemplate.fill = am4core.color("#98EA8A");
+	
 
 	let hoverState = worldMapTemplate.states.create("hover");
-	hoverState.properties.fill = am4core.color("#6ED35D");
+	hoverState.properties.fill = am4core.color("#FE82B6");
+	worldMapTemplate.tooltipPosition = "fixed";
+	
 
 	let countryList : Ref<any[]> = ref([])
+	countryList.value  = WorldMap.data
 	let countryNamdAndId : Ref<any[]> = ref([])
 	let randomCountry : Ref<country>= ref({
 		countryId : '',
@@ -73,10 +77,6 @@ export default defineComponent({
 	let gameOver : Ref<boolean> = ref(false)
 	
 	
-
-	countryList.value  = WorldMap.data
-	// console.log(countryList)
-
 	const getRandomCountry = () => {
 		let randomNumber = Math.floor(Math.random() * countryNamdAndId.value.length)
 		let country = countryNamdAndId.value[randomNumber]
@@ -97,48 +97,86 @@ export default defineComponent({
 		}	
 		getRandomCountry()
 	}, 0)
-	
-	function myFunction(ev : any) {
-		
-		// console.log(ev.target.dataItem.dataContext.name);
-		if(randomCountry.value.countryName === ev.target.dataItem.dataContext.name) {
-			score.value +=1;
-			ev.target.fill =am4core.color("#F3CC3B")
-			getRandomCountry()
-			return score
-		} else {
-			
-			lifes.value -= 1
-			ev.target.fill =am4core.color("#FF0000")
-			
-		}
-		if(lifes.value === 0) {
-			let answer = WorldMap.getPolygonById(randomCountry.value.countryId);
-			answer.isHover = true
-			gameOver.value = true
-			answer.series.chart.zoomToMapObject(answer);
-			
-			
-			
-			
-			console.log('running')
-		}
 
-	}
-	
+
 	worldMapTemplate.events.on("hit", myFunction);
 
+
+	// let answer :any;
 	
+	// if (answer) {
+	// 	answer.isHover = false;
+	// }
+	// answer = WorldMap.getPolygonById(randomCountry.value.countryId);
+	// answer.isHover = true;
 	
-	//map.series.template.events.off("hit", myFunction, this);
+
+	// worldMapTemplate.events.on("over", function(ev :any) {
+	// if (ev.target != answer) {
+	// 	answer.isHover = false;
+	// }
+	
+	// // This is needed so that "unhovering" previous polygon does not hide tooltip
+	// ev.target.isHover = false;
+	// ev.target.isHover = true;
+	// });
+	
+	function myFunction(event : any) {
+		
+		// console.log(ev.target.dataItem.dataContext.name);
+		if(randomCountry.value.countryName === event.target.dataItem.dataContext.name) {
+			
+			event.target.fill = am4core.color("#F3CC3B")
+			getRandomCountry()
+			return score.value +=1;
+		} 
+			
+			lifes.value -= 1
+			event.target.fill = am4core.color("#FF0000")
+			
+		
+		if(lifes.value === 0) {
+			// let answer = WorldMap.getPolygonById(randomCountry.value.countryId);
+			// answer.tooltipText = "{name}";
+			// answer.isHover = true
+			// // answer.fill = am4core.color("#706767")
+			// answer.series.chart.zoomToMapObject(answer);
+			// console.log(answer.dataItem.dataContext )
+
+			
+			let answer = WorldMap.getPolygonById(randomCountry.value.countryId);
+			answer.isHover = true;
+			
+			
+			
+			if (answer != answer) {
+				answer.isHover = false;
+			}
+			answer.series.chart.zoomToMapObject(answer);
+			// This is needed so that "unhovering" previous polygon does not hide tooltip
+			answer.isHover = false;
+			answer.isHover = false;
+			
+			return gameOver.value = true
+		
+		}
+		
+
+	}
 		
 	const restart = () => {
-		score.value = 0
-		lifes.value = 3
+		score.value = 0;
+		lifes.value = 3;
+		gameOver.value = false;
 		map.goHome();
 		getRandomCountry()
+		// map.setState("default")
+		
 	}
 	
+	const zoomOut = () => {
+		map.goHome();
+	}
 	
 	return {
 		randomCountry,
@@ -147,7 +185,9 @@ export default defineComponent({
 		score,
 		lifes,
 		gameOver,
-		restart
+		restart,
+		zoomOut
+		
 	}
 }    
 });
@@ -157,7 +197,7 @@ export default defineComponent({
 <style scoped>
 
 .container{
-	overflow: hidden;
+	position: relative;
 }
 h1 {
   color: blue;
@@ -182,7 +222,49 @@ span, .score {
 #chartdiv {
   width: 100%;
   height: 500px;
+  position: relative;
 }
+
+.zoomout {
+	position: absolute;
+	top: 0;
+	right: 8rem;
+	z-index: 2;
+	/* width: 5.5rem;
+	height: 2.5rem;
+	border: none;
+	cursor: pointer;
+	border-radius: 4px;
+	background-color: #349EFF;
+	font-weight: 600; */
+	
+}
+
+.restart, .zoomout {
+	width: 5.5rem;
+	height: 2.5rem;
+	border: none;
+	cursor: pointer;
+	border-radius: 4px;
+	background-color: #349EFF;
+	font-weight: 600;
+}
+
+.gameover {
+	width: 100%;
+	height: 580px;
+	z-index: 1;
+	position: absolute;
+	background-color: rgba(54, 146, 250, 0.226);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+h1 {
+	margin-bottom: 1rem;
+}
+
 
 /* svg path {
   fill: #264653;
