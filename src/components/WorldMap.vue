@@ -1,26 +1,25 @@
 <template>
 	
 	<div class="container">
-	<div class="gameover" v-if="gameOver"><h1>Game over</h1> <button class="restart" @click="restart">Restart</button></div>
-	<div class="info_bar">
-
-	<div class="countryname_flag">
-	<h4>Find this country <span>{{randomCountry.countryName}}</span> </h4>
-	<img :src="`https://www.countryflags.io/${randomCountry.countryId}/shiny/32.png`" >
+		<div v-if="answer" class="correct_answer">{{answer}}</div>
+		<div class="gameover" v-if="gameOver">
+			<h1>Game over</h1> 
+			<button class="restart" @click="restart">Restart</button>
+		</div>
+		<div class="info_bar">
+			<div class="countryname_flag">
+				<h4>Find this country <span>{{randomCountry.countryName}}</span> </h4>
+				<img :src="`https://www.countryflags.io/${randomCountry.countryId}/shiny/32.png`" >
+			</div>
+			<div class="score_life">
+				<h4 class="score">Score : {{score}}</h4>
+				<h4>Lifes : {{lifes}}</h4>
+			</div>
+		</div>
+		<div id="chartdiv" >
+			<button class="zoomout" @click="zoomOut">Rezoom</button>
+		</div>
 	</div>
-	
-	<div class="score_life">
-	<h4 class="score">Score : {{score}}</h4>
-	<h4>Lifes : {{lifes}}</h4>
-	</div>
-	</div>
-	<!-- <button @click="startGame">Start</button> -->
-	<div id="chartdiv" >
-		<button class="zoomout" @click="zoomOut">Rezoom</button>
-	</div>
-	</div>
-	
-  
 </template>
 
 <script lang="ts">
@@ -54,7 +53,6 @@ export default defineComponent({
 	WorldMap.useGeodata = true;
 	WorldMap.calculateVisualCenter = true;
 	
-
 	let worldMapTemplate = WorldMap.mapPolygons.template;
 	// worldMapTemplate.tooltipText = "{name}";
 	worldMapTemplate.fill = am4core.color("#98EA8A");
@@ -76,8 +74,9 @@ export default defineComponent({
 	})
 	let score : Ref<number> = ref(0)
 	let lifes : Ref<number> = ref(5)
+	let answer : Ref<any> = ref();
 	let gameOver : Ref<boolean> = ref(false)
-	
+	let count : Ref<number> = ref(1)
 	
 	const getRandomCountry = () => {
 		let randomNumber = Math.floor(Math.random() * countryNamdAndId.value.length)
@@ -108,6 +107,8 @@ export default defineComponent({
 			
 			country.target.fill = am4core.color("#F3CC3B")
 			getRandomCountry()
+			answer.value = ''
+			zoomOut()
 			return score.value +=1;
 		} 
 		lifes.value -= 1
@@ -116,20 +117,24 @@ export default defineComponent({
 
 	const showCorrectAnswer = (answer : any) => {
 		if(lifes.value === 2) {
-			answer.value = WorldMap.getPolygonById(randomCountry.value.countryId);
-			answer.value.series.chart.zoomToMapObject(answer.value);
-			answer.value.tooltipText = "{name}";
-			answer.value.isHover = true
+			if(count.value === 1){
+				answer.value = randomCountry.value.countryName
+				let country = ref()
+				country.value = WorldMap.getPolygonById(randomCountry.value.countryId);
+				country.value.series.chart.zoomToMapObject(country.value);
+			}
+			count.value = 0
 		} 
 	}
 
 	const restart = () => {
 		score.value = 0;
 		lifes.value = 5;
+		count.value = 1
+		answer.value = ''
 		gameOver.value = false;
 		map.goHome();
 		getRandomCountry()
-		// map.setState("default")	
 	}
 
 	const checkIfGameIsOver = () => {
@@ -143,8 +148,6 @@ export default defineComponent({
 		
 		checkIfCorrectAnswer(event)
 		
-		let answer : Ref<any> = ref();
-
 		showCorrectAnswer(answer)
 
 		checkIfGameIsOver()
@@ -158,6 +161,7 @@ export default defineComponent({
 	}
 	
 	return {
+		answer,
 		randomCountry,
 		countryList,
 		countryNamdAndId,
@@ -174,6 +178,18 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+
+.correct_answer{
+	position:absolute;
+	top: 50%;
+	left: 50%;
+	padding: 20px 40px;
+	background-color: white;
+	border-radius: 5px;
+	z-index: 100;
+}
+
+
 
 .container{
 	position: relative;
