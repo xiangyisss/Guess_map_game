@@ -1,18 +1,15 @@
 <template>
-  <h1>Worldmap Quiz Game</h1>
-  
-  <WorldMap  />
+  <Index />
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-// import Nav from "./components/Nav.vue";
-import WorldMap from "./components/WorldMap.vue";
+import Index from "./Pages/Index.vue";
 
 export default defineComponent({
   name: "App",
   components: {
-    WorldMap
+    Index,
   },
 });
 </script>
@@ -29,6 +26,11 @@ export default defineComponent({
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  /* margin-top: 60px; */
+  width: 100%;
+  min-height: 100vh;
+  background: #2193b0;
+  background: -webkit-linear-gradient(to right, #6dd5ed, #2193b0);
+  background: linear-gradient(to right, #6dd5ed, #2193b0);
+  overflow: hidden;
 }
 </style>

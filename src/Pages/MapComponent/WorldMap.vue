@@ -1,0 +1,269 @@
+<template>
+  <div class="container">
+    <div v-if="answer" class="correct_answer">{{ answer }}</div>
+    <div class="gameover" v-if="gameOver">
+      <h1>Game over</h1>
+      <button class="restart" @click="restart">Restart</button>
+    </div>
+    <div class="score_life">
+      <h4 class="score">Score : {{ score }}</h4>
+      <h4>Lifes : {{ lifes }}</h4>
+    </div>
+
+    <div id="chartdiv" @click="trackMouseMovement">
+      <div
+        v-if="slectedCountryName"
+        id="selected_country_name"
+        ref="selectedCountry"
+      >
+        {{ slectedCountryName }}
+      </div>
+
+      <button class="zoomout" @click="zoomOut">Rezoom</button>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, ref, Ref } from "vue";
+import * as am4core from "@amcharts/amcharts4/core";
+import * as am4maps from "@amcharts/amcharts4/maps";
+import am4geodata_worldLow from "@amcharts/amcharts4-geodata/worldLow";
+
+interface country {
+  countryId: string;
+  countryName: string;
+}
+
+interface position {
+  top: string;
+  left: string;
+}
+
+export default defineComponent({
+  name: "WorldMap",
+  components: {},
+  setup(props, { emit }) {
+    let map = am4core.create("chartdiv", am4maps.MapChart);
+    map.geodata = am4geodata_worldLow;
+    map.geodataSource.url = "/path/to/myCustomMap.json";
+    map.projection = new am4maps.projections.Mercator();
+    var WorldMap = map.series.push(new am4maps.MapPolygonSeries());
+    WorldMap.exclude = ["AQ", "UM-FQ", "TV"];
+    WorldMap.useGeodata = true;
+    WorldMap.calculateVisualCenter = true;
+    let worldMapTemplate = WorldMap.mapPolygons.template;
+    worldMapTemplate.fill = am4core.color("#41729F");
+    let hoverState = worldMapTemplate.states.create("hover");
+    hoverState.properties.fill = am4core.color("#5885AF");
+    worldMapTemplate.tooltipPosition = "fixed";
+    let countryList: Ref<any[]> = ref([]);
+    countryList.value = WorldMap.data;
+    let countryNamdAndId: Ref<any[]> = ref([]);
+    let randomCountry: Ref<country> = ref({
+      countryId: " ",
+      countryName: " ",
+    });
+    let score: Ref<number> = ref(0);
+    let lifes: Ref<number> = ref(5);
+    let answer: Ref<any> = ref();
+    let slectedCountryName: Ref<any> = ref();
+    let gameOver: Ref<boolean> = ref(false);
+    let count: Ref<number> = ref(1);
+    let mousePosition: Ref<position> = ref({
+      top: " ",
+      left: " ",
+    });
+    const getRandomCountry = () => {
+      let randomNumber = Math.floor(
+        Math.random() * countryNamdAndId.value.length
+      );
+      let country = countryNamdAndId.value[randomNumber];
+      randomCountry.value = {
+        countryId: country.countryId,
+        countryName: country.countryName,
+      };
+      emit("randomCountryName", randomCountry.value);
+    };
+    setTimeout(() => {
+      for (let item of countryList.value) {
+        let countryInfo = {
+          countryName: item.name,
+          countryId: item.id,
+        };
+        countryNamdAndId.value.push(countryInfo);
+      }
+      getRandomCountry();
+    }, 0);
+    worldMapTemplate.events.on("hit", makeGuess);
+    const trackMouseMovement = (clicked: any) => {
+      mousePosition.value = {
+        left: clicked.clientX,
+        top: clicked.clientY,
+      };
+    };
+    const selectedCountry = ref(null);
+    function showSelectedCountryName(country: any) {
+      if (
+        randomCountry.value.countryName !=
+        country.target.dataItem.dataContext.name
+      ) {
+        setTimeout(() => {
+          slectedCountryName.value = country.target.dataItem.dataContext.name;
+          selectedCountry.value.style.position = "absolute";
+          selectedCountry.value.style.left = mousePosition.value.left + "px";
+          selectedCountry.value.style.top = mousePosition.value.top + "px";
+          selectedCountry.value.style.transform = "translate(-50%, -50%)";
+          selectedCountry.value.style.zIndex = "3";
+        });
+        setTimeout(() => {
+          slectedCountryName.value = "";
+        }, 1000);
+      }
+    }
+    const checkIfCorrectAnswer = (country: any) => {
+      if (
+        randomCountry.value.countryName ===
+        country.target.dataItem.dataContext.name
+      ) {
+        country.target.fill = am4core.color("#3D550C");
+        getRandomCountry();
+        answer.value = "";
+        zoomOut();
+        return (score.value += 1);
+      }
+
+      lifes.value -= 1;
+      showSelectedCountryName(country);
+
+      country.target.fill = am4core.color("#F51720");
+    };
+    const showCorrectAnswer = (answer: any) => {
+      if (lifes.value === 2) {
+        if (count.value === 1) {
+          setTimeout(() => {
+            answer.value = randomCountry.value.countryName;
+            let country = ref();
+            country.value = WorldMap.getPolygonById(
+              randomCountry.value.countryId
+            );
+            country.value.series.chart.zoomToMapObject(country.value);
+          }, 300);
+        }
+        count.value = 0;
+      }
+    };
+
+    const restart = () => {
+      score.value = 0;
+      lifes.value = 5;
+      count.value = 1;
+      answer.value = "";
+      gameOver.value = false;
+      map.goHome();
+      getRandomCountry();
+    };
+
+    const checkIfGameIsOver = () => {
+      if (lifes.value === 0) {
+        restart();
+        return (gameOver.value = true);
+      }
+    };
+
+    function makeGuess(event: any) {
+      checkIfCorrectAnswer(event);
+
+      showSelectedCountryName(event);
+
+      showCorrectAnswer(answer);
+
+      checkIfGameIsOver();
+    }
+
+    const zoomOut = () => {
+      map.goHome();
+    };
+
+    return {
+      answer,
+      randomCountry,
+      countryList,
+      countryNamdAndId,
+      score,
+      lifes,
+      gameOver,
+      restart,
+      zoomOut,
+      slectedCountryName,
+      trackMouseMovement,
+      selectedCountry,
+    };
+  },
+});
+</script>
+
+<style scoped>
+#selected_country_name {
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.082);
+  border-radius: 5px;
+}
+.score_life {
+  display: flex;
+  width: 20%;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.correct_answer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.438);
+  border-radius: 5px;
+  z-index: 100;
+}
+.container {
+  position: relative;
+}
+
+.score {
+  margin-right: 1rem;
+}
+
+#chartdiv {
+  width: 100%;
+  height: 80vh;
+  margin-top: 5vh;
+  position: relative;
+}
+.zoomout {
+  position: absolute;
+  bottom: 0;
+  right: 8rem;
+  z-index: 2;
+}
+.restart,
+.zoomout {
+  width: 5.5rem;
+  height: 2.5rem;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  background-color: #daedff;
+  font-weight: 600;
+}
+.gameover {
+  width: 100%;
+  min-height: 80vh;
+  z-index: 1;
+  position: absolute;
+  background-color: rgba(199, 217, 238, 0.432);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+</style>
