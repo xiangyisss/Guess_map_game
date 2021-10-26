@@ -18,6 +18,7 @@ export default defineComponent({
       randomCountryName.value = countryName;
       return randomCountryName.value;
     };
+
     return {
       WorldMap,
       recieveRandomCountryName,

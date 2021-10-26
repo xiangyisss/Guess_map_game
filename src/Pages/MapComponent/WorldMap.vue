@@ -11,12 +11,10 @@
     </div>
 
     <div id="chartdiv" @click="trackMouseMovement">
-      <div
-        v-if="slectedCountryName"
-        id="selected_country_name"
-        ref="selectedCountry"
-      >
-        {{ slectedCountryName }}
+      <div ref="selectedCountry">
+        <div v-if="slectedCountryName">
+          {{ slectedCountryName }}
+        </div>
       </div>
 
       <button class="zoomout" @click="zoomOut">Rezoom</button>
@@ -25,7 +23,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref } from "vue";
+import { defineComponent, onMounted, ref, Ref } from "vue";
 import * as am4core from "@amcharts/amcharts4/core";
 import * as am4maps from "@amcharts/amcharts4/maps";
 import am4geodata_worldLow from "@amcharts/amcharts4-geodata/worldLow";
@@ -44,54 +42,55 @@ export default defineComponent({
   name: "WorldMap",
   components: {},
   setup(props, { emit }) {
-    let map = am4core.create("chartdiv", am4maps.MapChart);
+    const map = am4core.create("chartdiv", am4maps.MapChart);
     map.geodata = am4geodata_worldLow;
     map.geodataSource.url = "/path/to/myCustomMap.json";
     map.projection = new am4maps.projections.Mercator();
-    var WorldMap = map.series.push(new am4maps.MapPolygonSeries());
+    const WorldMap = map.series.push(new am4maps.MapPolygonSeries());
     WorldMap.exclude = ["AQ", "UM-FQ", "TV"];
     WorldMap.useGeodata = true;
     WorldMap.calculateVisualCenter = true;
-    let worldMapTemplate = WorldMap.mapPolygons.template;
+    const worldMapTemplate = WorldMap.mapPolygons.template;
     worldMapTemplate.fill = am4core.color("#41729F");
-    let hoverState = worldMapTemplate.states.create("hover");
+    const hoverState = worldMapTemplate.states.create("hover");
     hoverState.properties.fill = am4core.color("#5885AF");
     worldMapTemplate.tooltipPosition = "fixed";
-    let countryList: Ref<any[]> = ref([]);
+    const countryList: Ref<any[]> = ref([]);
     countryList.value = WorldMap.data;
-    let countryNamdAndId: Ref<any[]> = ref([]);
-    let randomCountry: Ref<country> = ref({
+    const countryNamdAndCountryId: Ref<any[]> = ref([]);
+    const randomCountry: Ref<country> = ref({
       countryId: " ",
       countryName: " ",
     });
-    let score: Ref<number> = ref(0);
-    let lifes: Ref<number> = ref(5);
-    let answer: Ref<any> = ref();
-    let slectedCountryName: Ref<any> = ref();
-    let gameOver: Ref<boolean> = ref(false);
-    let count: Ref<number> = ref(1);
-    let mousePosition: Ref<position> = ref({
+    const score: Ref<number> = ref(0);
+    const lifes: Ref<number> = ref(5);
+    const answer: Ref<any> = ref();
+    const slectedCountryName: Ref<any> = ref();
+    const gameOver: Ref<boolean> = ref(false);
+    const count: Ref<number> = ref(1);
+    const mousePosition: Ref<position> = ref({
       top: " ",
       left: " ",
     });
     const getRandomCountry = () => {
-      let randomNumber = Math.floor(
-        Math.random() * countryNamdAndId.value.length
+      const randomNumber = Math.floor(
+        Math.random() * countryNamdAndCountryId.value.length
       );
-      let country = countryNamdAndId.value[randomNumber];
+      const countryNameandCountryCode =
+        countryNamdAndCountryId.value[randomNumber];
       randomCountry.value = {
-        countryId: country.countryId,
-        countryName: country.countryName,
+        countryId: countryNameandCountryCode.countryId,
+        countryName: countryNameandCountryCode.countryName,
       };
       emit("randomCountryName", randomCountry.value);
     };
     setTimeout(() => {
-      for (let item of countryList.value) {
-        let countryInfo = {
+      for (const item of countryList.value) {
+        const countryInfo = {
           countryName: item.name,
           countryId: item.id,
         };
-        countryNamdAndId.value.push(countryInfo);
+        countryNamdAndCountryId.value.push(countryInfo);
       }
       getRandomCountry();
     }, 0);
@@ -101,8 +100,23 @@ export default defineComponent({
         left: clicked.clientX,
         top: clicked.clientY,
       };
+      return mousePosition.value;
     };
     const selectedCountry = ref(null);
+    onMounted(() => {
+      selectedCountry.value.style.position = "absolute";
+      selectedCountry.value.style.left = 0 + "px";
+      selectedCountry.value.style.top = 0 + "px";
+      selectedCountry.value.style.zIndex = "0";
+      selectedCountry.value.style.transform = "translate(0, 0)";
+    });
+    const getPosition = () => {
+      selectedCountry.value.style.position = "absolute";
+      selectedCountry.value.style.left = mousePosition.value.left + "px";
+      selectedCountry.value.style.top = mousePosition.value.top + "px";
+      selectedCountry.value.style.zIndex = "3";
+      selectedCountry.value.style.transform = "translate(-50%, -50%)";
+    };
     function showSelectedCountryName(country: any) {
       if (
         randomCountry.value.countryName !=
@@ -110,15 +124,11 @@ export default defineComponent({
       ) {
         setTimeout(() => {
           slectedCountryName.value = country.target.dataItem.dataContext.name;
-          selectedCountry.value.style.position = "absolute";
-          selectedCountry.value.style.left = mousePosition.value.left + "px";
-          selectedCountry.value.style.top = mousePosition.value.top + "px";
-          selectedCountry.value.style.transform = "translate(-50%, -50%)";
-          selectedCountry.value.style.zIndex = "3";
+          getPosition();
         });
         setTimeout(() => {
           slectedCountryName.value = "";
-        }, 1000);
+        }, 500);
       }
     }
     const checkIfCorrectAnswer = (country: any) => {
@@ -132,10 +142,8 @@ export default defineComponent({
         zoomOut();
         return (score.value += 1);
       }
-
       lifes.value -= 1;
       showSelectedCountryName(country);
-
       country.target.fill = am4core.color("#F51720");
     };
     const showCorrectAnswer = (answer: any) => {
@@ -143,12 +151,14 @@ export default defineComponent({
         if (count.value === 1) {
           setTimeout(() => {
             answer.value = randomCountry.value.countryName;
-            let country = ref();
-            country.value = WorldMap.getPolygonById(
+            const correctCountryMap = ref();
+            correctCountryMap.value = WorldMap.getPolygonById(
               randomCountry.value.countryId
             );
-            country.value.series.chart.zoomToMapObject(country.value);
-          }, 300);
+            correctCountryMap.value.series.chart.zoomToMapObject(
+              correctCountryMap.value
+            );
+          }, 500);
         }
         count.value = 0;
       }
@@ -166,8 +176,7 @@ export default defineComponent({
 
     const checkIfGameIsOver = () => {
       if (lifes.value === 0) {
-        restart();
-        return (gameOver.value = true);
+        gameOver.value = true;
       }
     };
 
@@ -189,7 +198,7 @@ export default defineComponent({
       answer,
       randomCountry,
       countryList,
-      countryNamdAndId,
+      countryNamdAndCountryId,
       score,
       lifes,
       gameOver,
@@ -206,7 +215,7 @@ export default defineComponent({
 <style scoped>
 #selected_country_name {
   padding: 10px;
-  background-color: rgba(255, 255, 255, 0.082);
+  background-color: rgba(226, 226, 226, 0.692);
   border-radius: 5px;
 }
 .score_life {
