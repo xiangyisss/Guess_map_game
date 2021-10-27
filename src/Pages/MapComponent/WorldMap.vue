@@ -10,13 +10,20 @@
       <h4>Lifes : {{ lifes }}</h4>
     </div>
 
-    <div id="chartdiv" @click="trackMouseMovement">
-      <div ref="selectedCountry">
-        <div v-if="slectedCountryName">
-          {{ slectedCountryName }}
+    <div class="mapcontainer">
+      <div
+        id="chartdiv"
+        @touchstart="trackTouchMovement"
+        @click="trackMouseMovement"
+      >
+        <div ref="selectedCountry">
+          <div v-if="slectedCountryName" class="selected_country_name">
+            {{ slectedCountryName }}
+          </div>
         </div>
       </div>
-
+    </div>
+    <div class="btnbox">
       <button class="zoomout" @click="zoomOut">Rezoom</button>
     </div>
   </div>
@@ -43,6 +50,7 @@ export default defineComponent({
   components: {},
   setup(props, { emit }) {
     const map = am4core.create("chartdiv", am4maps.MapChart);
+    map.draggable = false;
     map.geodata = am4geodata_worldLow;
     map.geodataSource.url = "/path/to/myCustomMap.json";
     map.projection = new am4maps.projections.Mercator();
@@ -95,6 +103,14 @@ export default defineComponent({
       getRandomCountry();
     }, 0);
     worldMapTemplate.events.on("hit", makeGuess);
+    const trackTouchMovement = (touched: any) => {
+      let touch = touched.touches[0];
+      mousePosition.value = {
+        left: touch.pageX,
+        top: touch.pageY,
+      };
+      return mousePosition.value;
+    };
     const trackMouseMovement = (clicked: any) => {
       mousePosition.value = {
         left: clicked.clientX,
@@ -207,16 +223,18 @@ export default defineComponent({
       slectedCountryName,
       trackMouseMovement,
       selectedCountry,
+      trackTouchMovement,
     };
   },
 });
 </script>
 
 <style scoped>
-#selected_country_name {
-  padding: 10px;
+.selected_country_name {
+  padding: 4px;
   background-color: rgba(226, 226, 226, 0.692);
   border-radius: 5px;
+  font-size: 0.75rem;
 }
 .score_life {
   display: flex;
@@ -224,6 +242,7 @@ export default defineComponent({
   position: absolute;
   top: 0;
   right: 0;
+  z-index: 1;
 }
 .correct_answer {
   position: absolute;
@@ -232,7 +251,7 @@ export default defineComponent({
   padding: 10px;
   background-color: rgba(255, 255, 255, 0.438);
   border-radius: 5px;
-  z-index: 100;
+  z-index: 1;
 }
 .container {
   position: relative;
@@ -242,15 +261,19 @@ export default defineComponent({
   margin-right: 1rem;
 }
 
-#chartdiv {
+.mapcontainer {
   width: 100%;
   height: 80vh;
-  margin-top: 5vh;
-  position: relative;
+  margin-top: 1.5rem;
+}
+#chartdiv {
+  width: 80%;
+  height: 100%;
+  margin: 0 auto;
 }
 .zoomout {
   position: absolute;
-  bottom: 0;
+  bottom: 1rem;
   right: 8rem;
   z-index: 2;
 }
@@ -274,5 +297,35 @@ export default defineComponent({
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+@media (max-width: 850px) {
+  .score_life {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  .zoomout {
+    position: static;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .btnbox {
+    width: 100%;
+    height: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+@media (max-width: 600px) {
+  .mapcontainer {
+    overflow: hidden;
+  }
+  #chartdiv {
+    transform: scale(2, 2);
+    position: relative;
+    z-index: 0;
+  }
 }
 </style>

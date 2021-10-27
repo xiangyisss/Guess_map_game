@@ -1,5 +1,5 @@
 <template>
-  <h1>Worldmap Quiz Game</h1>
+  <h2>Worldmap Quiz Game</h2>
   <RandomCountryName :countryName="randomCountryName" />
   <WorldMap @randomCountryName="recieveRandomCountryName" />
 </template>
@@ -29,8 +29,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
-h1 {
-  padding: 0.5rem;
-  margin-bottom: 1rem;
+h2 {
+  margin: 1rem;
 }
 </style>
